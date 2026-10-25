@@ -1,4 +1,4 @@
-local SCRIPT_URL = "https://raw.githubusercontent.com/krislowk/nullhubserverhop/refs/heads/main/nhsvhbyZen"
+local SCRIPT_URL = "https://raw.githubusercontent.com/krislowk/nullhubserverhop/main/nhsvhbyZen"
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -310,6 +310,8 @@ local function joinServer(jobId, isHop, serverList, index)
                 showToast("All servers full.")
             end
         end
+    else
+        task.delay(5, function() isTeleporting = false end)
     end
 end
 
