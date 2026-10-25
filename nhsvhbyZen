@@ -1,4 +1,4 @@
-local SCRIPT_URL = "YOUR_SCRIPT_URL_HERE"
+local SCRIPT_URL = "https://raw.githubusercontent.com/krislowk/nullhubserverhop/refs/heads/main/nhsvhbyZen"
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
