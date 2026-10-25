@@ -508,7 +508,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 local function setupAutoReexecute()
-    if SCRIPT_URL == "YOUR_SCRIPT_URL_HERE" then return end
+    if SCRIPT_URL == "" then return end
     local reexecCode = ("task.wait(3) loadstring(game:HttpGet('%s'))()"):format(SCRIPT_URL)
     
     if syn and syn.queue_on_teleport then
@@ -524,9 +524,7 @@ setupAutoReexecute()
 
 LocalPlayer.OnTeleport:Connect(function(state)
     if state == Enum.TeleportState.Started then
-        if SCRIPT_URL ~= "YOUR_SCRIPT_URL_HERE" then
-            setupAutoReexecute()
-        end
+        setupAutoReexecute()
     end
 end)
 
