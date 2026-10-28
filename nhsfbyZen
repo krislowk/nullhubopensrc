@@ -1,0 +1,526 @@
+local Players      = game:GetService("Players")
+local RunService   = game:GetService("RunService")
+local UIS          = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui      = game:GetService("CoreGui")
+
+local LP = Players.LocalPlayer
+
+pcall(function()
+    local old = CoreGui:FindFirstChild("NullHubSimpleFly")
+    if old then old:Destroy() end
+end)
+
+local function new(class, props, parent)
+    local o = Instance.new(class)
+    for k, v in next, props do o[k] = v end
+    o.Parent = parent
+    return o
+end
+
+local ACCENT      = Color3.fromRGB(255, 255, 255)
+local ACCENT_DARK = Color3.fromRGB(100, 100, 100)
+local TRACK_OFF   = Color3.fromRGB(40, 40, 40)
+local INK         = Color3.fromRGB(245, 245, 245)
+local MUTE        = Color3.fromRGB(140, 140, 140)
+local SHELL       = Color3.fromRGB(15, 15, 15)
+local BG_TOP      = Color3.fromRGB(28, 28, 28)
+local BG_BOT      = Color3.fromRGB(10, 10, 10)
+local LINE        = Color3.fromRGB(55, 55, 55)
+
+local F_UI   = Enum.Font.Ubuntu
+local F_MARK = Enum.Font.Sarpanch
+
+local LOGO_ID = "rbxassetid://89551531197606"
+
+local speed  = 120
+local flying = false
+
+local gui = new("ScreenGui", {
+    Name = "NullHubSimpleFly",
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+}, CoreGui)
+
+local opener = new("TextButton", {
+    Name = "Opener",
+    Size = UDim2.new(0, 56, 0, 56),
+    Position = UDim2.new(0, 30, 0, 90),
+    BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+    BorderSizePixel = 0,
+    Text = "",
+    AutoButtonColor = false,
+    Active = true,
+    ClipsDescendants = false,
+    ZIndex = 2,
+}, gui)
+
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, opener)
+
+local spinner = new("Frame", {
+    Name = "Spinner",
+    Size = UDim2.new(1, 6, 1, 6),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundTransparency = 1,
+    ZIndex = 1,
+}, opener)
+
+local spinnerStroke = new("UIStroke", {
+    Thickness = 2,
+    Color = ACCENT,
+    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+}, spinner)
+
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, spinner)
+
+local spinnerGrad = new("UIGradient", {
+    Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(50, 50, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+    }),
+    Rotation = 0,
+}, spinnerStroke)
+
+local logo = new("ImageLabel", {
+    Name = "Logo",
+    Size = UDim2.new(0, 44, 0, 44),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundTransparency = 1,
+    Image = LOGO_ID,
+    ScaleType = Enum.ScaleType.Crop,
+    ZIndex = 3,
+}, opener)
+
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, logo)
+
+local statusDot = new("Frame", {
+    Name = "Status",
+    Size = UDim2.new(0, 10, 0, 10),
+    Position = UDim2.new(0.82, 0, 0.82, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Color3.fromRGB(80, 80, 80),
+    BorderSizePixel = 0,
+    ZIndex = 4,
+}, opener)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, statusDot)
+new("UIStroke", { Color = Color3.fromRGB(10, 10, 10), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, statusDot)
+
+task.spawn(function()
+    local rot = 0
+    while gui.Parent do
+        rot = (rot + 1.5) % 360
+        spinnerGrad.Rotation = rot
+        RunService.RenderStepped:Wait()
+    end
+end)
+
+opener.MouseEnter:Connect(function()
+    TweenService:Create(opener, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 60, 0, 60)}):Play()
+end)
+opener.MouseLeave:Connect(function()
+    TweenService:Create(opener, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 56, 0, 56)}):Play()
+end)
+
+local panel = new("Frame", {
+    Name = "Panel",
+    Size = UDim2.new(0, 180, 0, 100),
+    Position = UDim2.new(0, 30, 0, 156),
+    BackgroundColor3 = SHELL,
+    BorderSizePixel = 0,
+    Active = true,
+    Visible = false,
+    ClipsDescendants = true,
+    ZIndex = 1,
+}, gui)
+
+local scale = new("UIScale", { Scale = 0.85 }, panel)
+new("UICorner", { CornerRadius = UDim.new(0, 12) }, panel)
+new("UIStroke", {
+    Color = LINE,
+    Thickness = 1,
+    ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+}, panel)
+new("UIGradient", {
+    Color = ColorSequence.new(BG_TOP, BG_BOT),
+    Rotation = 90,
+}, panel)
+
+local panelLogo = new("ImageLabel", {
+    Size = UDim2.new(0, 18, 0, 18),
+    Position = UDim2.new(0, 14, 0, 10),
+    BackgroundTransparency = 1,
+    Image = LOGO_ID,
+    ScaleType = Enum.ScaleType.Fit,
+    ZIndex = 2,
+}, panel)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, panelLogo)
+
+new("TextLabel", {
+    Name = "Wordmark",
+    Size = UDim2.new(0, 100, 0, 18),
+    Position = UDim2.new(0, 38, 0, 9),
+    BackgroundTransparency = 1,
+    Font = F_MARK,
+    Text = "NULL HUB",
+    TextSize = 14,
+    TextColor3 = ACCENT,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 2,
+}, panel)
+
+local switch = new("TextButton", {
+    Name = "Switch",
+    Size = UDim2.new(0, 38, 0, 20),
+    Position = UDim2.new(1, -52, 0, 10),
+    BackgroundColor3 = TRACK_OFF,
+    Text = "",
+    AutoButtonColor = false,
+    ZIndex = 2,
+}, panel)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, switch)
+
+local knob = new("Frame", {
+    Name = "Knob",
+    Size = UDim2.new(0, 16, 0, 16),
+    Position = UDim2.new(0, 2, 0.5, 0),
+    AnchorPoint = Vector2.new(0, 0.5),
+    BackgroundColor3 = MUTE,
+    BorderSizePixel = 0,
+    Active = false,
+    ZIndex = 3,
+}, switch)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, knob)
+
+new("Frame", {
+    Name = "Rule",
+    Size = UDim2.new(1, -28, 0, 1),
+    Position = UDim2.new(0, 14, 0, 38),
+    BackgroundColor3 = LINE,
+    BorderSizePixel = 0,
+    Active = false,
+    ZIndex = 2,
+}, panel)
+
+new("TextLabel", {
+    Name = "SpeedLabel",
+    Size = UDim2.new(0, 40, 0, 14),
+    Position = UDim2.new(0, 14, 0, 48),
+    BackgroundTransparency = 1,
+    Font = F_UI,
+    Text = "Speed",
+    TextSize = 12,
+    TextColor3 = MUTE,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    ZIndex = 2,
+}, panel)
+
+local speedValue = new("TextLabel", {
+    Name = "SpeedValue",
+    Size = UDim2.new(0, 44, 0, 14),
+    Position = UDim2.new(1, -58, 0, 48),
+    BackgroundTransparency = 1,
+    Font = F_UI,
+    Text = tostring(speed),
+    TextSize = 13,
+    TextColor3 = INK,
+    TextXAlignment = Enum.TextXAlignment.Right,
+    ZIndex = 2,
+}, panel)
+
+local slider = new("Frame", {
+    Name = "Slider",
+    Size = UDim2.new(1, -28, 0, 16),
+    Position = UDim2.new(0, 14, 0, 70),
+    BackgroundTransparency = 1,
+    Active = true,
+    ZIndex = 2,
+}, panel)
+
+local track = new("Frame", {
+    Name = "Track",
+    Size = UDim2.new(1, 0, 0, 4),
+    Position = UDim2.new(0, 0, 0.5, -2),
+    BackgroundColor3 = TRACK_OFF,
+    BorderSizePixel = 0,
+    Active = false,
+    ZIndex = 2,
+}, slider)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, track)
+
+local fill = new("Frame", {
+    Name = "Fill",
+    Size = UDim2.new(0, 0, 1, 0),
+    BackgroundColor3 = ACCENT,
+    BorderSizePixel = 0,
+    Active = false,
+    ZIndex = 3,
+}, track)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, fill)
+
+local slideKnob = new("Frame", {
+    Name = "Grip",
+    Size = UDim2.new(0, 12, 0, 12),
+    Position = UDim2.new(0, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = ACCENT,
+    BorderSizePixel = 0,
+    Active = false,
+    ZIndex = 4,
+}, slider)
+new("UICorner", { CornerRadius = UDim.new(1, 0) }, slideKnob)
+
+local function makeDraggable(target, onTap)
+    target.InputBegan:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+        and input.UserInputType ~= Enum.UserInputType.Touch then
+            return
+        end
+
+        local startPos = input.Position
+        local origin   = target.Position
+        local moved    = 0
+        local conn
+
+        conn = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.Change then
+                local d = input.Position - startPos
+                moved = math.max(moved, math.abs(d.X) + math.abs(d.Y))
+
+                if moved >= 8 then
+                    target.Position = UDim2.new(
+                        origin.X.Scale, origin.X.Offset + d.X,
+                        origin.Y.Scale, origin.Y.Offset + d.Y
+                    )
+                end
+            elseif input.UserInputState == Enum.UserInputState.End then
+                if conn then
+                    conn:Disconnect()
+                    conn = nil
+                end
+                if moved < 8 and onTap then
+                    onTap()
+                end
+            end
+        end)
+    end)
+end
+
+local function setSpeed(alpha)
+    alpha = math.clamp(alpha, 0, 1)
+    speed = math.floor(10 + alpha * 490 + 0.5)
+    fill.Size           = UDim2.new(alpha, 0, 1, 0)
+    slideKnob.Position  = UDim2.new(alpha, 0, 0.5, 0)
+    speedValue.Text     = tostring(speed)
+end
+
+slider.InputBegan:Connect(function(input)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+    and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+
+    local function apply()
+        local a = (input.Position.X - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1)
+        setSpeed(a)
+    end
+
+    apply()
+
+    local conn
+    conn = input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.Change then
+            apply()
+        elseif input.UserInputState == Enum.UserInputState.End then
+            if conn then
+                conn:Disconnect()
+                conn = nil
+            end
+        end
+    end)
+end)
+
+setSpeed((120 - 10) / 490)
+
+local controls
+do
+    local ok, mod = pcall(function()
+        return require(LP.PlayerScripts:WaitForChild("PlayerModule", 10))
+    end)
+    if ok and mod then
+        local ok2, c = pcall(function() return mod:GetControls() end)
+        if ok2 then controls = c end
+    end
+end
+
+local bodyVelocity, bodyGyro, flyConn
+local jumpStamp = 0
+
+UIS.JumpRequest:Connect(function()
+    jumpStamp = os.clock()
+end)
+
+local function parts()
+    local char = LP.Character
+    if not char then return nil, nil, nil end
+    return char, char:FindFirstChild("HumanoidRootPart"), char:FindFirstChildOfClass("Humanoid")
+end
+
+local function paint(on)
+    TweenService:Create(switch, TweenInfo.new(0.16), {
+        BackgroundColor3 = on and Color3.fromRGB(255, 255, 255) or TRACK_OFF,
+    }):Play()
+
+    TweenService:Create(knob, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position         = on and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
+        BackgroundColor3 = on and Color3.fromRGB(15, 15, 15) or MUTE,
+    }):Play()
+
+    TweenService:Create(statusDot, TweenInfo.new(0.16), {
+        BackgroundColor3 = on and ACCENT or Color3.fromRGB(80, 80, 80),
+    }):Play()
+end
+
+local function stop()
+    flying = false
+
+    if flyConn then flyConn:Disconnect() flyConn = nil end
+    if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+
+    local _, _, hum = parts()
+    if hum then hum.PlatformStand = false end
+
+    paint(false)
+end
+
+local function start()
+    local _, hrp, hum = parts()
+    if not hrp or not hum then return end
+
+    stop()
+    flying = true
+    hum.PlatformStand = true
+
+    bodyVelocity = new("BodyVelocity", {
+        Name     = "NullHubFlyVel",
+        MaxForce = Vector3.new(1e5, 1e5, 1e5),
+        Velocity = Vector3.zero,
+    }, hrp)
+
+    bodyGyro = new("BodyGyro", {
+        Name      = "NullHubFlyGyro",
+        MaxTorque = Vector3.new(1e5, 1e5, 1e5),
+        P         = 12000,
+        D         = 140,
+        CFrame    = hrp.CFrame,
+    }, hrp)
+
+    flyConn = RunService.RenderStepped:Connect(function()
+        if not flying then return end
+
+        local _, root, humanoid = parts()
+        if not root or not humanoid or not bodyVelocity or not bodyGyro then
+            stop()
+            return
+        end
+
+        local cam = workspace.CurrentCamera
+        if not cam then return end
+        local camCF = cam.CFrame
+
+        local fwd, strafe = 0, 0
+
+        if controls then
+            local ok, mv = pcall(function() return controls:GetMoveVector() end)
+            if ok and mv then
+                fwd    = -mv.Z
+                strafe =  mv.X
+            end
+        else
+            local md = humanoid.MoveDirection
+            fwd    = md:Dot(camCF.LookVector)
+            strafe = md:Dot(camCF.RightVector)
+        end
+
+        local lift = 0
+        if UIS:IsKeyDown(Enum.KeyCode.Space) or (os.clock() - jumpStamp) < 0.14 then
+            lift = 1
+        elseif UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+            lift = -1
+        end
+
+        local dir = camCF.LookVector * fwd + camCF.RightVector * strafe
+        if lift ~= 0 then
+            dir = dir + Vector3.yAxis * lift
+        end
+
+        if dir.Magnitude > 0 then
+            dir = dir.Unit * speed
+        end
+
+        bodyVelocity.Velocity = dir
+        bodyGyro.CFrame       = camCF
+    end)
+
+    paint(true)
+end
+
+local panelOpen = false
+
+local function openPanel()
+    if panelOpen then return end
+    panelOpen = true
+
+    panel.Visible = true
+    scale.Scale = 0.85
+
+    TweenService:Create(scale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Scale = 1
+    }):Play()
+end
+
+local function closePanel()
+    if not panelOpen then return end
+    panelOpen = false
+
+    local t = TweenService:Create(scale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Scale = 0.85
+    })
+    t:Play()
+
+    t.Completed:Connect(function()
+        if not panelOpen then
+            panel.Visible = false
+        end
+    end)
+end
+
+local function togglePanel()
+    if panelOpen then closePanel() else openPanel() end
+end
+
+makeDraggable(opener, togglePanel)
+makeDraggable(panel, nil)
+
+switch.MouseButton1Click:Connect(function()
+    if flying then stop() else start() end
+end)
+
+local function bind()
+    local _, _, hum = parts()
+    if hum then
+        hum.Died:Connect(function()
+            if flying then stop() end
+        end)
+    end
+end
+
+bind()
+LP.CharacterAdded:Connect(function()
+    if flying then stop() end
+    task.defer(bind)
+end)
